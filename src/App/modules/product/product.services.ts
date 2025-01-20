@@ -20,13 +20,14 @@ const getSingleBikeFromDB = async (_id: string) => {
     return result;
 }
 
-// update price and quantity of a bike
-const updateBikeIntoDB = async (_id: string, quantity: number, price: number) => {
-    const result = await BikeModel.findByIdAndUpdate(
-        _id,
+// update price, stock and quantity of a bike
+const updateBikeIntoDB = async (_id: string, quantity: number, price: number, inStock: boolean) => {
+    const result = await BikeModel.findOneAndUpdate(
+        {_id, isDeleted: { $ne: true }},
         {
             quantity,
             price,
+            inStock,
             updatedAt: new Date()
         },
         { new: true }
@@ -39,10 +40,24 @@ const deleteBikeFromDB = async (_id: string) => {
     return await BikeModel.updateOne({ _id }, { isDeleted: true });
 }
 
+// update product quantity for order
+const updateProductQuantityIntoDB = async (_id: string, quantity: number, inStock: boolean) => {
+    return await BikeModel.findByIdAndUpdate(
+        _id,
+        {
+            quantity,
+            inStock,
+            updatedAt: new Date()
+        },
+        { new: true }
+    );
+}
+
 export const ProductServices = {
     createBikeIntoDB,
     getAllBikesFromDB,
     getSingleBikeFromDB,
     updateBikeIntoDB,
     deleteBikeFromDB,
+    updateProductQuantityIntoDB,
 }

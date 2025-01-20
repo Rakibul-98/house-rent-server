@@ -56,13 +56,21 @@ const getASingleBike = async (req: Request, res: Response): Promise<any> => {
 
         const result = await ProductServices.getSingleBikeFromDB(productId);
 
+        // handle deteled bike
+        if (!result) {
+            return res.status(404).json({
+                message: "Bike not found!",
+                status: false,
+                data: {},
+            });
+        }
         return res.status(200).json({
             message: "Bike retrived successfully",
             status: true,
             data: result,
         });
     } catch (err: any) {
-        return res.status(500).json({
+        return res.status(400).json({
             message: err.name,
             success: false,
             error: err,
@@ -76,8 +84,19 @@ const updateBike = async (req: Request, res: Response): Promise<any> => {
         // get the upadated price and quantity
         const { price, quantity } = req.body;
 
-        const result = await ProductServices.updateBikeIntoDB(productId, quantity, price);
+        // update stock status
+        const updatedInStock = quantity > 0;
 
+        const result = await ProductServices.updateBikeIntoDB(productId, quantity, price, updatedInStock);
+
+        // handle deteled bike update
+        if (!result) {
+            return res.status(403).json({
+                message: "Deleted bike can not be updated!",
+                status: false,
+                data: {},
+            });
+        }
         return res.status(200).json({
             message: "Bike updated successfully",
             status: true,
@@ -102,7 +121,7 @@ const deleteBike = async (req: Request, res: Response): Promise<any> => {
             data: {},
         });
     } catch (err: any) {
-        return res.status(400).json({
+        return res.status(404).json({
             message: err.name,
             success: false,
             error: err,
