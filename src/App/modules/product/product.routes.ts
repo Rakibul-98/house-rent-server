@@ -1,17 +1,33 @@
-import express from 'express';
-import { ProductControllers } from './product.controllers';
+import express from "express";
+import auth from "../../middlewares/auth";
+import validateRequest from "../../middlewares/validateRequest";
+import { ProductController } from "./product.controller";
+import bikeValidationSchema from "./product.validators";
 
 const router = express.Router();
 
-router.post('/', ProductControllers.createBike);
+// create user route with proper validation
+router.post(
+  "/",
+  auth("admin"),
+  validateRequest(bikeValidationSchema),
+  ProductController.createBike
+);
 
-router.get('/', ProductControllers.getAllBikes);
+// get all blogs with public api
+router.get("/", ProductController.getAllBikes);
 
-router.get('/:productId', ProductControllers.getASingleBike);
+router.get("/:id", ProductController.getSingleBike);
 
-router.put('/:productId', ProductControllers.updateBike);
+// update blog proper validation for user only
+router.patch(
+  "/:id",
+  auth("admin"),
+  validateRequest(bikeValidationSchema),
+  ProductController.updateBike
+);
 
-router.delete('/:productId', ProductControllers.deleteBike);
-
+// delete blog by user only
+router.delete("/:id", auth("admin"), ProductController.deleteBike);
 
 export const ProductRoutes = router;

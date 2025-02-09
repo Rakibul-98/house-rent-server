@@ -1,20 +1,20 @@
-import express, { Application, Request, Response } from 'express'
+import express, { Application } from 'express'
 import cors from 'cors';
-import { ProductRoutes } from './App/modules/product/product.routes';
-import { OrderRoutes } from './App/modules/order/order.routes';
+import cookieParser from 'cookie-parser';
+import router from './App/routes';
+import globalErrorHandler from './App/middlewares/globalErrorhandler';
+import notFound from './App/middlewares/notFound';
 
 const app: Application = express();
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(cors());
 
-app.use('/api/products', ProductRoutes);
-app.use('/api/orders', OrderRoutes);
+app.use('/api/', router);
 
-const getAController = (req: Request, res: Response) => {
-    res.send('Hello from A controller');
-}
+app.use(globalErrorHandler);
 
-app.get('/', getAController);
+app.use(notFound as any);
 
 export default app;

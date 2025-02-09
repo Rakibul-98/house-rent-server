@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { ProductServices } from "../product/product.services";
+import { ProductServices } from "../product/product.service";
 import { OrderServices } from "./order.services";
 import { orderZodSchema } from "./order.validators";
 
