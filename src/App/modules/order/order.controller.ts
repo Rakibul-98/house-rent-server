@@ -98,7 +98,7 @@ const updateOrderStatus = catchAsync(async (req, res) => {
 const deleteOrder = catchAsync(async (req, res) => {
   const { id } = req.params;
 
-  const result = await OrderServices.deleteOrderFromDB(id);
+  const result = await OrderServices.deleteOrderFromDB(id, req.user);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

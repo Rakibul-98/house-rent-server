@@ -119,7 +119,7 @@ const updateOrderStatusIntoDB = async (id: string, newStatus: string) => {
   return result;
 };
 
-const deleteOrderFromDB = async (id: string) => {
+const deleteOrderFromDB = async (id: string, payload: JwtPayload) => {
   const order = await OrderModel.findById(id);
 
   if (!order) {
@@ -128,6 +128,18 @@ const deleteOrderFromDB = async (id: string) => {
 
   if (order.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, "Order has already been deleted!");
+  }
+
+  if (order.orderStatus === "processing" || order.orderStatus ===
+    "shipped") {
+    throw new AppError(httpStatus.BAD_REQUEST, `Order has already ${order.orderStatus}, you can't delete now!`);
+  }
+
+  if (order.customer._id.toString() !== payload._id.toString()) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "You are not authorized delete this order"
+    );
   }
 
   const result = await OrderModel.findByIdAndUpdate(
