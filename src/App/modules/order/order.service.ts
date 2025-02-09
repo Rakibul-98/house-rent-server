@@ -6,7 +6,12 @@ import { orderType } from "./order.interfaces";
 import { OrderModel } from "./order.models";
 import AppError from "../../errors/AppError";
 
-const createOrderIntoDB = async (order: orderType) => {
+const createOrderIntoDB = async (order: orderType, loggedInUser: JwtPayload) => {
+  const userStatus = loggedInUser.isBlocked;
+
+  if (userStatus) {
+    throw new AppError(httpStatus.FORBIDDEN, "Blocked user could not place order!");
+  }
   const result = await OrderModel.create(order);
 
   await BikeModel.findByIdAndUpdate(order.product, {

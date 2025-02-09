@@ -6,6 +6,7 @@ export interface TUser {
     email: string;
     password: string;
     role: 'customer' | 'admin';
+    profile_image: string;
     isBlocked: boolean;
     isDeleted: boolean;
 }

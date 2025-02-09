@@ -21,6 +21,10 @@ const userSchema = new Schema<TUser, User>({
         select: false,
 
     },
+    profile_image: {
+        type: String,
+        default: 'https://ibb.co.com/mCdw2wR9'
+    },
     role: {
         type: String,
         enum: ['customer', 'admin'],

@@ -11,11 +11,4 @@ router.patch(
   userControllers.blockUser,
 )
 
-// route to update user by admin
-// router.delete(
-//     '/blogs/:id',
-//     auth('admin'),
-//     blogControllers.deleteBlog,
-//   )
-
 export const adminRoutes = router;

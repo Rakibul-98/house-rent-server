@@ -7,7 +7,7 @@ import auth from '../../middlewares/auth';
 const router = express.Router();
 
 router.post(
-  '/create-user',
+  '/register-user',
   validateRequest(userValidationSchema),
   userControllers.createUser,
 );
@@ -20,8 +20,14 @@ router.get(
 
 router.get(
   '/:email',
-  auth('admin', 'user'),
+  auth('admin', 'customer'),
   userControllers.getSingleUser,
+)
+
+router.patch(
+  '/:userId',
+  auth('customer'),
+  userControllers.updateUser,
 )
 
 export const userRoutes = router;

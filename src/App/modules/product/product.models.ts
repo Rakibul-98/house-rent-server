@@ -36,8 +36,7 @@ const bikeSchema = new Schema<BikeType>(
       min: [0, "Quantity can't be negative!"],
     },
     inStock: {
-      type: Boolean,
-      required: true,
+      type: Boolean, default: true,
     },
     isDeleted: { type: Boolean, default: false },
   },

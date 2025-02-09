@@ -18,8 +18,10 @@ const userValidationSchema = z.object({
         password: z
             .string()
             .min(4, "Password must be at least 4 characters long"),
+        profile_image: z.string().optional().default("https://ibb.co.com/mCdw2wR9"),
         role: z.enum(["customer", "admin"]).optional().default("customer"),
         isBlocked: z.boolean().optional().default(false),
+        isDeleted: z.boolean().optional().default(false),
     })
 });
 

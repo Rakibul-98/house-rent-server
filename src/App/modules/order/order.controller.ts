@@ -37,7 +37,7 @@ const createOrder = catchAsync(async (req, res) => {
   const result = await OrderServices.createOrderIntoDB({
     ...orderData,
     totalPrice,
-  });
+  }, req.user);
 
   productDetails.quantity -= quantity;
   await productDetails.save();
