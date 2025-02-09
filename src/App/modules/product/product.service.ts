@@ -67,28 +67,10 @@ const deleteBikeFromDB = async (_id: string) => {
   return deletedBike;
 };
 
-// update product quantity for order
-const updateProductQuantityIntoDB = async (
-  _id: string,
-  quantity: number,
-  inStock: boolean
-) => {
-  return await BikeModel.findByIdAndUpdate(
-    _id,
-    {
-      quantity,
-      inStock,
-      updatedAt: new Date(),
-    },
-    { new: true }
-  );
-};
-
 export const ProductServices = {
   createBikeIntoDB,
   getAllBikesFromDB,
   getSingleBikeFromDB,
   updateBikeIntoDB,
   deleteBikeFromDB,
-  updateProductQuantityIntoDB,
 };

@@ -2,7 +2,7 @@ import { Model } from "mongoose";
 
 // User interface
 export interface TUser {
-    name: string;
+    user_name: string;
     email: string;
     password: string;
     role: 'customer' | 'admin';

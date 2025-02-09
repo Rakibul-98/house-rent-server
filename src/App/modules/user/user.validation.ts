@@ -3,7 +3,7 @@ import { z } from "zod";
 // user data validation with zod validation
 const userValidationSchema = z.object({
     body: z.object({
-        name: z
+        user_name: z
             .string()
             .trim()
             .min(1, "Name is required")

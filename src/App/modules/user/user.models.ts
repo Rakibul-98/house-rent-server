@@ -5,7 +5,7 @@ import config from '../../config';
 
 // user schema with user interface
 const userSchema = new Schema<TUser, User>({
-    name: {
+    user_name: {
         type: String,
         required: [true, 'Name is required'],
         trim: true
