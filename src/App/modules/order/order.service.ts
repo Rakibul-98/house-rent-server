@@ -2,32 +2,92 @@ import httpStatus from "http-status";
 import { JwtPayload } from "jsonwebtoken";
 import { BikeModel } from "../product/product.models";
 import QueryBuilder from "../product/product.queryBuilder";
-import { orderType } from "./order.interfaces";
 import { OrderModel } from "./order.models";
 import AppError from "../../errors/AppError";
+import { orderType } from "./order.interfaces";
 
-const createOrderIntoDB = async (order: orderType, loggedInUser: JwtPayload) => {
+// const createOrderIntoDB = async (order: orderType, loggedInUser: JwtPayload) => {
+//   const userStatus = loggedInUser.isBlocked;
+
+//   if (userStatus) {
+//     throw new AppError(httpStatus.FORBIDDEN, "Blocked user could not place order!");
+//   }
+//   const result = await OrderModel.create(order);
+
+//   await BikeModel.findByIdAndUpdate(order.product, {
+//     $inc: { quantity: -order.quantity },
+//   });
+
+//   await result.populate([
+//     {
+//       path: "customer",
+//       select: "-password -__v",
+//     },
+//     {
+//       path: "product",
+//       select: "-__v",
+//     },
+//   ]);
+//   return result;
+// };
+
+const createOrderIntoDB = async (
+  order: orderType,
+  loggedInUser: JwtPayload
+) => {
   const userStatus = loggedInUser.isBlocked;
 
+  // Check if the user is blocked
   if (userStatus) {
-    throw new AppError(httpStatus.FORBIDDEN, "Blocked user could not place order!");
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Blocked user could not place order!"
+    );
   }
+
+  // Update stock for each product in the order
+  for (const item of order.items) {
+    const product = await BikeModel.findById(item.product);
+    if (!product) {
+      throw new AppError(
+        httpStatus.NOT_FOUND,
+        `Product with ID ${item.product} not found!`
+      );
+    }
+
+    if (product.available_quantity < item.order_quantity) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Insufficient stock for product ${product.name}!`
+      );
+    }
+
+    // Update the product quantity
+    product.available_quantity -= item.order_quantity;
+    if (product.available_quantity <= 0) {
+      product.inStock = false;
+    }
+    if (product.available_quantity >= 1) {
+      product.inStock = true;
+    }
+    await product.save();
+  }
+
+  // Create the order
   const result = await OrderModel.create(order);
 
-  await BikeModel.findByIdAndUpdate(order.product, {
-    $inc: { quantity: -order.quantity },
-  });
-
+  // Populate customer and product details
   await result.populate([
     {
       path: "customer",
       select: "-password -__v",
     },
     {
-      path: "product",
+      path: "items.product",
       select: "-__v",
     },
   ]);
+
   return result;
 };
 
@@ -41,7 +101,7 @@ const getAllOrdersFromDB = async (
       select: "-password -__v",
     },
     {
-      path: "product",
+      path: "items.product",
       select: "-__v",
     },
   ]);
@@ -71,7 +131,7 @@ const getSingleOrderFromDB = async (id: string, loggedInUser: JwtPayload) => {
       select: "-password -__v",
     },
     {
-      path: "product",
+      path: "items.product",
       select: "-__v",
     },
   ]);
@@ -130,9 +190,11 @@ const deleteOrderFromDB = async (id: string, payload: JwtPayload) => {
     throw new AppError(httpStatus.NOT_FOUND, "Order has already been deleted!");
   }
 
-  if (order.orderStatus === "processing" || order.orderStatus ===
-    "shipped") {
-    throw new AppError(httpStatus.BAD_REQUEST, `Order has already ${order.orderStatus}, you can't delete now!`);
+  if (order.orderStatus === "processing" || order.orderStatus === "shipped") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Order has already ${order.orderStatus}, you can't delete now!`
+    );
   }
 
   if (order.customer._id.toString() !== payload._id.toString()) {

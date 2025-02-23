@@ -1,4 +1,4 @@
-import { FilterQuery, Query } from 'mongoose';
+import { FilterQuery, Query } from "mongoose";
 
 class QueryBuilder<T> {
   public modelQuery: Query<T[], T>;
@@ -18,8 +18,8 @@ class QueryBuilder<T> {
         $or: searchableFields.map(
           (field) =>
             ({
-              [field]: { $regex: search, $options: 'i' },
-            }) as FilterQuery<T>,
+              [field]: { $regex: search, $options: "i" },
+            } as FilterQuery<T>)
         ),
       });
     }
@@ -32,28 +32,44 @@ class QueryBuilder<T> {
     const queryObj = { ...this.query };
 
     // excluding search, sortBy, sortOrder, and filter fields from query
-    const excludeFields = ['search', 'sortBy, sortOrder'];
+    const excludeFields = ["search", "sortBy", "limit", "page"];
 
     excludeFields.forEach((el) => delete queryObj[el]);
 
-    // filter by author if provided in query
-    if (queryObj.filter) {
-        queryObj.author = queryObj.filter;
-        delete queryObj.filter;
-    }
+    // // filter by author if provided in query
+    // if (queryObj.filter) {
+    //   queryObj.author = queryObj.filter;
+    //   delete queryObj.filter;
+    // }
 
     this.modelQuery = this.modelQuery.find(queryObj as FilterQuery<T>);
 
     return this;
   }
-
   // sorting the data by given value and order
   sort() {
-    const sortBy = this?.query?.sortBy as string;
-    const sortOrder = this?.query?.sortOrder === "asc" ? "" : "-";
-    const sortQuery = `${sortOrder}${sortBy}`;
+    const sortBy =
+      (this?.query?.sortBy as string)?.split(",")?.join(" ") || "name";
+    this.modelQuery = this.modelQuery.sort(sortBy as string);
 
-    this.modelQuery = this.modelQuery.sort(sortQuery);
+    return this;
+  }
+
+  // limit the number of results returned
+  limit() {
+    const limit = Number(this.query?.limit);
+    if (!isNaN(limit) && limit > 4) {
+      this.modelQuery = this.modelQuery.limit(limit);
+    }
+    return this;
+  }
+  paginate() {
+    const page = Number(this?.query?.page) || 1;
+    const limit =
+      Number(this.query?.limit) >= 4 ? Number(this.query?.limit) : 8;
+    const skip = (page - 1) * limit;
+
+    this.modelQuery = this.modelQuery.skip(skip).limit(limit);
 
     return this;
   }

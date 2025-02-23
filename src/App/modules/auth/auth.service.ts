@@ -14,12 +14,6 @@ const loginUser = async (payload: TLoginUser) => {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  // checking if the user is blocked by the admin
-  const isUserBlocked = existingUser.isBlocked;
-  if (isUserBlocked) {
-    throw new AppError(httpStatus.FORBIDDEN, "User is blocked");
-  }
-
   // checking if the user is already deleted or not
   const isUserDeleted = existingUser.isDeleted;
   if (isUserDeleted) {
@@ -45,6 +39,66 @@ const loginUser = async (payload: TLoginUser) => {
   const token = Jwt.sign(jwtPayload, config.jwt_access_secret as string, {
     expiresIn: "10d",
   });
+
+  const refreshToken = Jwt.sign(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    {
+      expiresIn: "365d",
+    }
+  );
+
+  return {
+    token,
+    refreshToken,
+  };
+};
+
+const refreshToken = async (refToken: string) => {
+  // checking if the given token is valid
+  const decoded = Jwt.verify(
+    refToken,
+    config.jwt_refresh_secret as string
+  ) as JwtPayload;
+
+  const { user, iat } = decoded;
+
+  // checking if the user is exist
+  const userExists = await UserModel.isUserExistsByEmail(user);
+
+  if (!userExists) {
+    throw new AppError(httpStatus.NOT_FOUND, "This user is not found !");
+  }
+  // checking if the user is already deleted
+  const isDeleted = userExists?.isDeleted;
+
+  if (isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, "This user is deleted !");
+  }
+
+  // checking if the user is blocked
+  const userStatus = userExists?.isBlocked;
+
+  if (userStatus === true) {
+    throw new AppError(httpStatus.FORBIDDEN, "This user is blocked ! !");
+  }
+
+  // if (
+  //   userExists.passwordChangedAt &&
+  //   UserModel.isJWTIssuedBeforePasswordChanged(user.passwordChangedAt, iat as number)
+  // ) {
+  //   throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized !');
+  // }
+
+  const jwtPayload = {
+    userId: user.id,
+    role: user.role,
+  };
+
+  const token = Jwt.sign(jwtPayload, config.jwt_access_secret as string, {
+    expiresIn: "10d",
+  });
+
   return {
     token,
   };
@@ -83,4 +137,5 @@ const changePasswordIntoDB = async (
 export const authServices = {
   loginUser,
   changePasswordIntoDB,
+  refreshToken,
 };

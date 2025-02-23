@@ -5,42 +5,108 @@ import sendResponse from "../../utils/sendResponse";
 import { BikeModel } from "../product/product.models";
 import { OrderServices } from "./order.service";
 
+// const createOrder = catchAsync(async (req, res) => {
+//   const customer = req.user._id;
+//   const orderData = {
+//     ...req.body,
+//     customer,
+//   };
+//   const { quantity, product } = orderData;
+
+//   const productDetails = await BikeModel.findById(product);
+//   if (!productDetails) {
+//     return sendResponse(res, {
+//       statusCode: httpStatus.NOT_FOUND,
+//       success: false,
+//       message: "Bike not found!",
+//       data: {},
+//     });
+//   }
+
+//   if (productDetails.quantity < quantity) {
+//     return sendResponse(res, {
+//       statusCode: httpStatus.BAD_REQUEST,
+//       success: false,
+//       message: "Insufficient stock!",
+//       data: {},
+//     });
+//   }
+
+//   const totalPrice = productDetails.price * quantity;
+
+//   const result = await OrderServices.createOrderIntoDB({
+//     ...orderData,
+//     totalPrice,
+//   }, req.user);
+
+//   productDetails.quantity -= quantity;
+//   await productDetails.save();
+
+//   sendResponse(res, {
+//     statusCode: httpStatus.CREATED,
+//     success: true,
+//     message: "Order placed successfully!",
+//     data: result,
+//   });
+// });
+
+// get all orders
+
 const createOrder = catchAsync(async (req, res) => {
   const customer = req.user._id;
-  const orderData = {
-    ...req.body,
-    customer,
-  };
-  const { quantity, product } = orderData;
+  const { items, totalAmount, phone, address } = req.body;
 
-  const productDetails = await BikeModel.findById(product);
-  if (!productDetails) {
-    return sendResponse(res, {
-      statusCode: httpStatus.NOT_FOUND,
-      success: false,
-      message: "Bike not found!",
-      data: {},
-    });
-  }
-
-  if (productDetails.quantity < quantity) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
     return sendResponse(res, {
       statusCode: httpStatus.BAD_REQUEST,
       success: false,
-      message: "Insufficient stock!",
+      message: "No items in the cart!",
       data: {},
     });
   }
+  const orderItems = [];
 
-  const totalPrice = productDetails.price * quantity;
+  for (const item of items) {
+    const { product, order_quantity } = item;
 
-  const result = await OrderServices.createOrderIntoDB({
-    ...orderData,
-    totalPrice,
-  }, req.user);
+    const productDetails = await BikeModel.findById(product);
+    if (!productDetails) {
+      return sendResponse(res, {
+        statusCode: httpStatus.NOT_FOUND,
+        success: false,
+        message: `Bike not found!`,
+        data: {},
+      });
+    }
 
-  productDetails.quantity -= quantity;
-  await productDetails.save();
+    if (productDetails.available_quantity < order_quantity) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: `Insufficient stock for bike ${productDetails.name}!`,
+        data: {},
+      });
+    }
+
+    orderItems.push({
+      product,
+      order_quantity,
+    });
+  }
+
+  // Create the order
+  const result = await OrderServices.createOrderIntoDB(
+    {
+      customer,
+      items: orderItems,
+      totalAmount,
+      phone,
+      address,
+      orderStatus: "pending",
+      isDeleted: false,
+    },
+    req.user
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -50,7 +116,6 @@ const createOrder = catchAsync(async (req, res) => {
   });
 });
 
-// get all orders
 const getAllOrders = catchAsync(async (req, res) => {
   // get query params
   const result = await OrderServices.getAllOrdersFromDB(req.query, req.user);

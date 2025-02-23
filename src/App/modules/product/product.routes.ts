@@ -23,7 +23,7 @@ router.get("/:id", ProductController.getSingleBike);
 router.patch(
   "/:id",
   auth("admin"),
-  validateRequest(bikeValidationSchema),
+  // validateRequest(bikeValidationSchema),
   ProductController.updateBike
 );
 

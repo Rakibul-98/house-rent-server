@@ -30,13 +30,26 @@ const bikeSchema = new Schema<BikeType>(
       required: [true, "Description is mandatory!"],
       trim: true,
     },
-    quantity: {
+    features: {
+      type: [String],
+      required: [true, "Features are mandatory!"],
+    },
+    product_image: {
+      type: String,
+      required: [true, "Image is mandatory!"],
+    },
+    available_quantity: {
       type: Number,
       required: true,
       min: [0, "Quantity can't be negative!"],
     },
+    cart_quantity: {
+      type: Number,
+      default: 0,
+    },
     inStock: {
-      type: Boolean, default: true,
+      type: Boolean,
+      default: true,
     },
     isDeleted: { type: Boolean, default: false },
   },

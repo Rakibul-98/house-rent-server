@@ -1,6 +1,12 @@
 import { orderType } from "./order.interfaces";
 import { model, Schema } from "mongoose";
 
+const orderItemSchema = new Schema({
+  product: { type: Schema.Types.ObjectId, ref: "Bike", required: true },
+  order_quantity: { type: Number, required: true },
+  price: { type: Number },
+});
+
 const orderSchema: Schema<orderType> = new Schema<orderType>(
   {
     customer: {
@@ -8,20 +14,13 @@ const orderSchema: Schema<orderType> = new Schema<orderType>(
       ref: "User",
       required: true,
     },
-    product: {
-      type: Schema.Types.ObjectId,
-      ref: "Bike",
-      required: true,
-    },
-    quantity: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-    totalPrice: {
+    items: [orderItemSchema],
+    totalAmount: {
       type: Number,
       required: true,
     },
+    address: { type: String, required: true },
+    phone: { type: String, required: true },
     orderStatus: {
       type: String,
       enum: [

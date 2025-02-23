@@ -13,6 +13,8 @@ router.post(
   authControllers.loginUser
 );
 
+router.post("/refresh-token", authControllers.refreshToken);
+
 router.put(
   "/changePassword",
   auth("admin", "customer"),

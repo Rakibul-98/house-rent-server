@@ -3,10 +3,7 @@ import { z } from "zod";
 // bike information validation
 const bikeValidationSchema = z.object({
   body: z.object({
-    name: z
-      .string()
-      .min(1, "Bike name is required")
-      .trim(),
+    name: z.string().min(1, "Bike name is required").trim(),
     brand: z
       .string()
       .min(1, "Brand is required")
@@ -33,7 +30,9 @@ const bikeValidationSchema = z.object({
         (value) => /^[a-zA-Z0-9\s.,'"\-!?()]+$/.test(value),
         "Description can only include letters, numbers, spaces, and basic punctuation"
       ),
-    quantity: z
+    features: z.array(z.string()).nonempty("At least one feature is required"),
+    product_image: z.string(),
+    available_quantity: z
       .number()
       .int("Quantity must be an integer")
       .min(0, "Quantity must be greater than or equal to 0")
@@ -42,7 +41,7 @@ const bikeValidationSchema = z.object({
         (value) => Number.isFinite(value),
         "Quantity must be a valid number"
       ),
-    // inStock by default true
+    cart_quantity: z.number().min(0).optional(),
     inStock: z.boolean().optional().default(true),
     isDeleted: z.boolean().optional().default(false),
   }),

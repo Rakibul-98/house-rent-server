@@ -1,10 +1,8 @@
-import { JwtPayload } from "jsonwebtoken";
 import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
 import { BikeType } from "./product.interfaces";
 import { BikeModel } from "./product.models";
 import QueryBuilder from "./product.queryBuilder";
-
 
 const createBikeIntoDB = async (bike: BikeType) => {
   const newBike = await BikeModel.create(bike);
@@ -14,12 +12,21 @@ const createBikeIntoDB = async (bike: BikeType) => {
 const getAllBikesFromDB = async (query: Record<string, unknown>) => {
   // implementing the search query
   const bikeQuery = new QueryBuilder(BikeModel.find(), query)
-    .search(["title", "content"])
+    .search(["name", "brand", "category", "description", "features"])
+    .filter()
     .sort()
-    .filter();
+    .limit()
+    .paginate();
 
   const result = await bikeQuery.modelQuery;
-  return result;
+
+  const totalData = await BikeModel.countDocuments(
+    new QueryBuilder(BikeModel.find({ isDeleted: { $ne: true } }), query)
+      .search(["name", "brand", "category", "description", "features"])
+      .filter()
+      .modelQuery.getFilter()
+  );
+  return { totalData, result };
 };
 
 const getSingleBikeFromDB = async (id: string) => {
@@ -27,10 +34,7 @@ const getSingleBikeFromDB = async (id: string) => {
   return bike;
 };
 
-const updateBikeIntoDB = async (
-  _id: string,
-  updateBike: Partial<BikeType>
-) => {
+const updateBikeIntoDB = async (_id: string, updateBike: Partial<BikeType>) => {
   const bike = await BikeModel.findOne({ _id, isDeleted: { $ne: true } });
 
   if (!bike) {
@@ -39,8 +43,8 @@ const updateBikeIntoDB = async (
 
   const updateFields = { ...updateBike, updatedAt: new Date() };
 
-  if (updateFields.quantity !== undefined) {
-    updateFields.inStock = updateFields.quantity > 0;
+  if (updateFields.available_quantity !== undefined) {
+    updateFields.inStock = updateFields.available_quantity > 0;
   }
 
   const updatedBike = await BikeModel.findByIdAndUpdate(
