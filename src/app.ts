@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://bike-solution-rakibul.vercel.app/",
+    origin: "https://bike-solution-rakibul.vercel.app",
     credentials: true,
   })
 );
