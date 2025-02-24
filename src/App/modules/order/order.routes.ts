@@ -13,6 +13,8 @@ router.post(
   OrderController.createOrder
 );
 
+router.get("/verify", auth("customer"), OrderController.verifyPayment);
+
 router.get("/", auth("admin", "customer"), OrderController.getAllOrders);
 
 router.get("/:id", auth("admin", "customer"), OrderController.getSingleOrder);

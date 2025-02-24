@@ -104,8 +104,18 @@ const createOrder = catchAsync(async (req, res) => {
       address,
       orderStatus: "pending",
       isDeleted: false,
+      // transaction: {
+      //   id: "N/A",
+      //   transactionStatus: "pending",
+      //   bank_status: "N/A",
+      //   sp_code: "N/A",
+      //   sp_message: "N/A",
+      //   method: "N/A",
+      //   date_time: new Date().toISOString(),
+      // },
     },
-    req.user
+    req.user,
+    req.ip!
   );
 
   sendResponse(res, {
@@ -191,11 +201,23 @@ const deleteOrder = catchAsync(async (req, res) => {
 //     }
 // }
 
+const verifyPayment = catchAsync(async (req, res) => {
+  const order = await OrderServices.verifyPayment(req.query.order_id as string);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Payment verified successfully",
+    data: order,
+  });
+});
+
 export const OrderController = {
   createOrder,
   getAllOrders,
   getSingleOrder,
   updateOrderStatus,
   deleteOrder,
+  verifyPayment,
   // getOrderRevenue,
 };

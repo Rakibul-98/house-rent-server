@@ -25,6 +25,7 @@ const orderSchema: Schema<orderType> = new Schema<orderType>(
       type: String,
       enum: [
         "pending",
+        "paid",
         "processing",
         "shipped",
         "delivered",
@@ -32,6 +33,15 @@ const orderSchema: Schema<orderType> = new Schema<orderType>(
         "returned",
       ],
       default: "pending",
+    },
+    transaction: {
+      id: { type: String },
+      transactionStatus: { type: String },
+      bank_status: { type: String },
+      sp_code: { type: String },
+      sp_message: { type: String },
+      method: { type: String },
+      date_time: { type: String },
     },
     isDeleted: {
       type: Boolean,

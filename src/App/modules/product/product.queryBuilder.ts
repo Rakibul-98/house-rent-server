@@ -31,16 +31,10 @@ class QueryBuilder<T> {
   filter() {
     const queryObj = { ...this.query };
 
-    // excluding search, sortBy, sortOrder, and filter fields from query
+    // excluding search, sortBy, limit, pagination  and fields from query
     const excludeFields = ["search", "sortBy", "limit", "page"];
 
     excludeFields.forEach((el) => delete queryObj[el]);
-
-    // // filter by author if provided in query
-    // if (queryObj.filter) {
-    //   queryObj.author = queryObj.filter;
-    //   delete queryObj.filter;
-    // }
 
     this.modelQuery = this.modelQuery.find(queryObj as FilterQuery<T>);
 

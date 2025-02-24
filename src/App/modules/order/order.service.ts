@@ -5,35 +5,12 @@ import QueryBuilder from "../product/product.queryBuilder";
 import { OrderModel } from "./order.models";
 import AppError from "../../errors/AppError";
 import { orderType } from "./order.interfaces";
-
-// const createOrderIntoDB = async (order: orderType, loggedInUser: JwtPayload) => {
-//   const userStatus = loggedInUser.isBlocked;
-
-//   if (userStatus) {
-//     throw new AppError(httpStatus.FORBIDDEN, "Blocked user could not place order!");
-//   }
-//   const result = await OrderModel.create(order);
-
-//   await BikeModel.findByIdAndUpdate(order.product, {
-//     $inc: { quantity: -order.quantity },
-//   });
-
-//   await result.populate([
-//     {
-//       path: "customer",
-//       select: "-password -__v",
-//     },
-//     {
-//       path: "product",
-//       select: "-__v",
-//     },
-//   ]);
-//   return result;
-// };
+import { orderUtils } from "./order.utils";
 
 const createOrderIntoDB = async (
-  order: orderType,
-  loggedInUser: JwtPayload
+  orderData: orderType,
+  loggedInUser: JwtPayload,
+  client_ip: string
 ) => {
   const userStatus = loggedInUser.isBlocked;
 
@@ -46,7 +23,7 @@ const createOrderIntoDB = async (
   }
 
   // Update stock for each product in the order
-  for (const item of order.items) {
+  for (const item of orderData.items) {
     const product = await BikeModel.findById(item.product);
     if (!product) {
       throw new AppError(
@@ -74,10 +51,10 @@ const createOrderIntoDB = async (
   }
 
   // Create the order
-  const result = await OrderModel.create(order);
+  let order = await OrderModel.create(orderData);
 
   // Populate customer and product details
-  await result.populate([
+  await order.populate([
     {
       path: "customer",
       select: "-password -__v",
@@ -88,7 +65,31 @@ const createOrderIntoDB = async (
     },
   ]);
 
-  return result;
+  // payment integration
+  const shurjopayPayload = {
+    amount: orderData.totalAmount,
+    order_id: order._id,
+    currency: "BDT",
+    customer_name: loggedInUser.user_name,
+    customer_address: orderData.address,
+    customer_email: loggedInUser.email,
+    customer_phone: orderData.phone,
+    customer_city: "N/A",
+    client_ip,
+  };
+
+  const payment = await orderUtils.makePaymentAsync(shurjopayPayload);
+
+  if (payment?.transactionStatus) {
+    order = await order.updateOne({
+      transaction: {
+        id: payment.sp_order_id,
+        transactionStatus: payment.transactionStatus,
+      },
+    });
+  }
+
+  return payment.checkout_url;
 };
 
 const getAllOrdersFromDB = async (
@@ -212,6 +213,37 @@ const deleteOrderFromDB = async (id: string, payload: JwtPayload) => {
   return result;
 };
 
+const verifyPayment = async (order_id: string) => {
+  const verifiedPayment = await orderUtils.verifyPaymentAsync(order_id);
+
+  if (verifiedPayment.length) {
+    await OrderModel.findOneAndUpdate(
+      {
+        "transaction.id": order_id,
+      },
+      {
+        "transaction.bank_status": verifiedPayment[0].bank_status,
+        "transaction.sp_code": verifiedPayment[0].sp_code,
+        "transaction.sp_message": verifiedPayment[0].sp_message,
+        "transaction.transactionStatus": verifiedPayment[0].transaction_status,
+        "transaction.method": verifiedPayment[0].method,
+        "transaction.date_time": verifiedPayment[0].date_time,
+        orderStatus:
+          verifiedPayment[0].bank_status === "Success"
+            ? "Paid"
+            : verifiedPayment[0].bank_status === "Failed"
+            ? "Pending"
+            : verifiedPayment[0].bank_status === "Cancel"
+            ? "Cancelled"
+            : "",
+      },
+      { new: true }
+    );
+  }
+
+  return verifiedPayment;
+};
+
 const getOrderRevenueFromDB = async (query: Record<string, unknown>) => {
   const result = await OrderModel.aggregate([
     {
@@ -237,4 +269,5 @@ export const OrderServices = {
   getSingleOrderFromDB,
   deleteOrderFromDB,
   updateOrderStatusIntoDB,
+  verifyPayment,
 };

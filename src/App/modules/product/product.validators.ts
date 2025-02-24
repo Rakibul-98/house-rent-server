@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// bike information validation
+// bike data validation
 const bikeValidationSchema = z.object({
   body: z.object({
     name: z.string().min(1, "Bike name is required").trim(),
