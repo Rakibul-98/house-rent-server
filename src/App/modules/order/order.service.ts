@@ -244,28 +244,28 @@ const verifyPayment = async (order_id: string) => {
   return verifiedPayment;
 };
 
-const getOrderRevenueFromDB = async (query: Record<string, unknown>) => {
-  const result = await OrderModel.aggregate([
-    {
-      $group: {
-        _id: null,
-        totalRevenue: { $sum: "$totalPrice" },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        totalRevenue: 1,
-      },
-    },
-  ]);
-  return result.length > 0 ? result[0] : 0;
-};
+// const getOrderRevenueFromDB = async (query: Record<string, unknown>) => {
+//   const result = await OrderModel.aggregate([
+//     {
+//       $group: {
+//         _id: null,
+//         totalRevenue: { $sum: "$totalPrice" },
+//       },
+//     },
+//     {
+//       $project: {
+//         _id: 0,
+//         totalRevenue: 1,
+//       },
+//     },
+//   ]);
+//   return result.length > 0 ? result[0] : 0;
+// };
 
 export const OrderServices = {
   createOrderIntoDB,
   getAllOrdersFromDB,
-  getOrderRevenueFromDB,
+  // getOrderRevenueFromDB,
   getSingleOrderFromDB,
   deleteOrderFromDB,
   updateOrderStatusIntoDB,
