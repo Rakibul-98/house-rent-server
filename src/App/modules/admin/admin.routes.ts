@@ -10,5 +10,10 @@ router.patch(
   auth('admin'),
   userControllers.blockUser,
 )
+router.patch(
+  '/users/:userId/update',
+  auth('admin'),
+  userControllers.updateUserRole,
+)
 
 export const adminRoutes = router;

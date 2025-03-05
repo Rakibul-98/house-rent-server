@@ -16,8 +16,8 @@ router.post(
 router.post("/refresh-token", authControllers.refreshToken);
 
 router.put(
-  "/changePassword",
-  auth("admin", "customer"),
+  "/change-password",
+  auth("admin", "tenant","owner"),
   authControllers.changePassword
 );
 

@@ -80,10 +80,29 @@ const updateUser = catchAsync(async (req, res) => {
   });
 });
 
+const updateUserRole = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const {role} = req.body;
+
+  const result = await userServices.updateUserRoleIntoDB(userId, role);
+
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found!");
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User role updated successfully",
+    data: {},
+  });
+});
+
 export const userControllers = {
   createUser,
   blockUser,
   getAllUsers,
   getSingleUser,
   updateUser,
+  updateUserRole,
 };

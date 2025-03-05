@@ -35,7 +35,7 @@ const verifyPaymentAsync = (
   });
 };
 
-export const orderUtils = {
+export const requestUtils = {
   makePaymentAsync,
   verifyPaymentAsync,
 };

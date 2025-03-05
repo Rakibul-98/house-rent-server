@@ -14,8 +14,8 @@ router.post(
 
 router.get("/", auth("admin"), userControllers.getAllUsers);
 
-router.get("/:email", auth("admin", "customer"), userControllers.getSingleUser);
+router.get("/:email", auth("admin", "tenant", "owner"), userControllers.getSingleUser);
 
-router.patch("/:userId", auth("customer", "admin"), userControllers.updateUser);
+router.patch("/:userId", auth("admin", "tenant", "owner"), userControllers.updateUser);
 
 export const userRoutes = router;

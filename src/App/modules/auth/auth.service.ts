@@ -37,7 +37,7 @@ const loginUser = async (payload: TLoginUser) => {
 
   // generate access token with JWT
   const token = Jwt.sign(jwtPayload, config.jwt_access_secret as string, {
-    expiresIn: "10d",
+    expiresIn: "2d",
   });
 
   const refreshToken = Jwt.sign(
@@ -96,7 +96,7 @@ const refreshToken = async (refToken: string) => {
   };
 
   const token = Jwt.sign(jwtPayload, config.jwt_access_secret as string, {
-    expiresIn: "10d",
+    expiresIn: "2d",
   });
 
   return {

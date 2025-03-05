@@ -1,43 +1,43 @@
 import httpStatus from "http-status";
 import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
-import { ProductServices } from "./product.service";
+import { ListingServices } from "./listing.service";
 
-const createBike = catchAsync(async (req, res) => {
-  const bike = req.body;
-  const result = await ProductServices.createBikeIntoDB(bike);
+const createListing = catchAsync(async (req, res) => {
+  const listingData = req.body;
+  const result = await ListingServices.createListingIntoDB(listingData);
 
   // send response
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "Bike created successfully",
+    message: "Listing created successfully",
     data: result,
   });
 });
 
-const getAllBikes = catchAsync(async (req, res) => {
-  const { totalData, result } = await ProductServices.getAllBikesFromDB(
+const getAllListings = catchAsync(async (req, res) => {
+  const { totalData, result } = await ListingServices.getAllListingsFromDB(
     req.query
   );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Bikes fetched successfully",
+    message: "Listings fetched successfully",
     data: { result: result, totalData: totalData },
   });
 });
 
-const getSingleBike = catchAsync(async (req, res) => {
+const getSingleListing = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const result = await ProductServices.getSingleBikeFromDB(id);
+  const result = await ListingServices.getSingleListingFromDB(id);
 
   if (!result) {
     return sendResponse(res, {
       statusCode: httpStatus.NOT_FOUND,
       success: false,
-      message: "Bike not found!",
+      message: "Listing not found!",
       data: {},
     });
   }
@@ -45,22 +45,22 @@ const getSingleBike = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Bike is retrieved successfully",
+    message: "Listing is retrieved successfully",
     data: result,
   });
 });
 
-const updateBike = catchAsync(async (req, res) => {
+const updateListing = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const updateBike = req.body;
+  const updateListing = req.body;
 
-  const result = await ProductServices.updateBikeIntoDB(id, updateBike);
+  const result = await ListingServices.updateListingIntoDB(id, updateListing);
 
   if (!result) {
     return sendResponse(res, {
       statusCode: httpStatus.NOT_FOUND,
       success: false,
-      message: "Bike not found!",
+      message: "Listing not found!",
       data: {},
     });
   }
@@ -68,20 +68,20 @@ const updateBike = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Bike updated successfully",
+    message: "Listing updated successfully",
     data: result,
   });
 });
 
-const deleteBike = catchAsync(async (req, res) => {
+const deleteListing = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const result = await ProductServices.deleteBikeFromDB(id);
+  const result = await ListingServices.deleteListingFromDB(id);
 
   if (!result) {
     return sendResponse(res, {
       statusCode: httpStatus.NOT_FOUND,
       success: false,
-      message: "Bike not found",
+      message: "Listing not found",
       data: {},
     });
   }
@@ -89,15 +89,15 @@ const deleteBike = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Bike deleted successfully",
+    message: "Listing deleted successfully",
     data: {},
   });
 });
 
-export const ProductController = {
-  createBike,
-  getAllBikes,
-  getSingleBike,
-  updateBike,
-  deleteBike,
+export const ListingController = {
+  createListing,
+  getAllListings,
+  getSingleListing,
+  updateListing,
+  deleteListing,
 };

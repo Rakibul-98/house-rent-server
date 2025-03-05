@@ -76,10 +76,20 @@ const updateUserIntoDB = async (
   return result;
 };
 
+const updateUserRoleIntoDB = async (_id: string, role: string) => {
+  const updatedUser = await UserModel.findByIdAndUpdate(
+    { _id },
+    { role },
+    { new: true }
+  );
+  return updatedUser;
+};
+
 export const userServices = {
   createUserIntoDB,
   blockUserIntoDB,
   getAllUsersFromDB,
   getSingleUserFromDB,
   updateUserIntoDB,
+  updateUserRoleIntoDB,
 };

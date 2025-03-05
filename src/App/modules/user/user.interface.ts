@@ -4,11 +4,11 @@ import { Model } from "mongoose";
 export interface TUser {
   user_name: string;
   email: string;
+  phone_num: string;
   password: string;
-  role: "customer" | "admin";
+  role: "tenant" | "admin" | "owner";
   profile_image: string;
   isBlocked: boolean;
-  isDeleted: boolean;
 }
 
 // User interface for statics
