@@ -5,7 +5,8 @@ import QueryBuilder from "../../utils/queryBuilder";
 import { RequestModel } from "./request.models";
 import AppError from "../../errors/AppError";
 import { requestUtils } from "./request.utils";
-import { requestType } from "./request.interfaces";
+import { PopulatedListingType, PopulatedRequestType, requestType } from "./request.interfaces";
+import { sendMail } from "../../utils/sendMail";
 
 
 const createRequestIntoDB = async (
@@ -195,6 +196,8 @@ const getSingleRequestFromDB = async (id: string, loggedInUser: JwtPayload) => {
     throw new AppError(httpStatus.NOT_FOUND, "Request not found or has been deleted.");
   }
 
+  const populatedRequest = request as unknown as PopulatedRequestType;
+
   // If the user is not an admin, check if they are the tenant or the owner of the listing
   if (loggedInUser.role !== "admin") {
     // Tenant can only view their own request
@@ -203,7 +206,10 @@ const getSingleRequestFromDB = async (id: string, loggedInUser: JwtPayload) => {
     }
 
     // Owner can only view requests related to their own listing
-    if (loggedInUser.role === "owner" && !request.listing.owner._id.equals(loggedInUser._id)) {
+    if (
+      loggedInUser.role === "owner" &&
+      !(populatedRequest.listing as PopulatedListingType).owner._id.equals(loggedInUser._id)
+    ) {
       throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to view this request.");
     }
   }
@@ -221,9 +227,11 @@ const updateRequestStatusIntoDB = async (id: string, newStatus: string, loggedIn
 
   const updatedPaymentStatus = newStatus === "approved" ? "active" : "inactive";
 
+  let result;
+
   if (loggedInUser.role === "admin") {
     // Admin can update any request status
-    const result = await RequestModel.findByIdAndUpdate(
+    result = await RequestModel.findByIdAndUpdate(
       id,
       {
         requestStatus: newStatus,
@@ -231,10 +239,7 @@ const updateRequestStatusIntoDB = async (id: string, newStatus: string, loggedIn
       },
       { new: true }
     );
-    return result;
-  }
-
-  if (loggedInUser.role === "owner") {
+  }else if (loggedInUser.role === "owner") {
     // Owner can only update requests related to their own listing
     const listing = await ListingModel.findById(request.listing);
 
@@ -244,7 +249,7 @@ const updateRequestStatusIntoDB = async (id: string, newStatus: string, loggedIn
     }
 
     // If the owner is the correct one, allow updating the status
-    const result = await RequestModel.findByIdAndUpdate(
+    result = await RequestModel.findByIdAndUpdate(
       id,
       {
         requestStatus: newStatus,
@@ -252,8 +257,11 @@ const updateRequestStatusIntoDB = async (id: string, newStatus: string, loggedIn
       },
       { new: true }
     );
-    return result;
   }
+  if(result){
+    await sendMail(request.listing, newStatus, request.tenant);
+  }
+  return result;
 };
 
 const deleteRequestFromDB = async (id: string, payload: JwtPayload) => {
@@ -322,9 +330,6 @@ const verifyPayment = async (request_id: string) => {
       if (listing) {
         listing.isAvailable = false;
         await listing.save();
-        console.log("Updated Listing Availability:", listing);
-      } else {
-        console.error("Listing not found for request:", updatedRequest.listing);
       }
     }
   }
