@@ -27,6 +27,6 @@ router.patch(
 );
 
 // delete listing by user only
-router.delete("/:id", auth("owner"), ListingController.deleteListing);
+router.delete("/:id", auth("owner","admin"), ListingController.deleteListing);
 
 export const ListingRoutes = router;

@@ -7,6 +7,7 @@ import AppError from "../../errors/AppError";
 import { requestUtils } from "./request.utils";
 import { requestType } from "./request.interfaces";
 
+
 const createRequestIntoDB = async (
   requestData: requestType,
   loggedInUser: JwtPayload,
@@ -31,12 +32,14 @@ const createRequestIntoDB = async (
       );
     }
 
-    // Update the product quantity
-    listingData.isAvailable = false;
-    await listingData.save();
-
   // Create the request
-  let request = await RequestModel.create(listingData);
+  let request = await RequestModel.create(
+    {
+      listing: requestData.listing,
+      totalAmount: requestData.totalAmount,
+      phone: requestData.phone,
+      tenant: requestData.tenant,
+    });
 
   // Populate tenant and product details
   await request.populate([
@@ -47,6 +50,10 @@ const createRequestIntoDB = async (
     {
       path: "listing",
       select: "-__v",
+      populate: {
+        path: "owner",
+        select: "-password -__v",
+      },
     },
   ]);
 
@@ -89,12 +96,29 @@ const getAllRequestsFromDB = async (
     {
       path: "listing",
       select: "-__v",
+      populate: {
+        path: "owner",
+        select: "-password -__v",
+      },
     },
   ]);
 
-  // If the user is not an admin, filter requests by tenant ID
+  // Admin: Can see all requests
   if (loggedInUser.role !== "admin") {
-    requestQuery = requestQuery.where("tenant").equals(loggedInUser._id);
+    if (loggedInUser.role === "tenant") {
+      // Tenant: See only their own requests
+      requestQuery = requestQuery.where("tenant").equals(loggedInUser._id);
+    } else if (loggedInUser.role === "owner") {
+      // Owner: See only requests related to their listings
+      const ownerListings = await ListingModel.find({ owner: loggedInUser._id }).select("_id");
+
+      if (ownerListings.length > 0) {
+        const listingIds = ownerListings.map((listing) => listing._id);
+        requestQuery = requestQuery.where("listing").in(listingIds);
+      } else {
+        return []; // If the owner has no listings, return an empty array
+      }
+    }
   }
 
   // Apply filters, sorting, and search functionality
@@ -108,10 +132,8 @@ const getAllRequestsFromDB = async (
 };
 
 const getSingleRequestFromDB = async (id: string, loggedInUser: JwtPayload) => {
-  let requestQuery = RequestModel.findById({
-    _id: id,
-    isDeleted: { $ne: true },
-  }).populate([
+  
+  const request = await RequestModel.findById(id).populate([
     {
       path: "tenant",
       select: "-password -__v",
@@ -119,50 +141,69 @@ const getSingleRequestFromDB = async (id: string, loggedInUser: JwtPayload) => {
     {
       path: "listing",
       select: "-__v",
+      populate: {
+        path: "owner",
+        select: "-password -__v",
+      },
     },
   ]);
 
-  if (loggedInUser.role !== "admin") {
-    requestQuery = requestQuery.where("tenant").equals(loggedInUser._id);
+  // If the request is not found or has been deleted, throw an error
+  if (!request || request.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Request not found or has been deleted.");
   }
 
-  const result = await requestQuery;
-  return result;
+  // If the user is not an admin, check if they are the tenant or the owner of the listing
+  if (loggedInUser.role !== "admin") {
+    // Tenant can only view their own request
+    if (loggedInUser.role === "tenant" && !request.tenant.equals(loggedInUser._id)) {
+      throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to view this request.");
+    }
+
+    // Owner can only view requests related to their own listing
+    if (loggedInUser.role === "owner" && !request.listing.owner._id.equals(loggedInUser._id)) {
+      throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to view this request.");
+    }
+  }
+
+  // If the user is authorized, return the request data
+  return request;
 };
 
-const updateRequestStatusIntoDB = async (id: string, newStatus: string) => {
-  const validStatuses = [
-    "pending",
-    "processing",
-    "shipped",
-    "delivered",
-    "cancelled",
-    "returned",
-  ];
+const updateRequestStatusIntoDB = async (id: string, newStatus: string, loggedInUser: JwtPayload) => {
 
   const request = await RequestModel.findById(id);
   if (!request || request.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, "Request not found!");
   }
 
-  const currentStatus = request.requestStatus;
-
-  const currentIndex = validStatuses.indexOf(currentStatus);
-  const newIndex = validStatuses.indexOf(newStatus);
-
-  if (newIndex < currentIndex) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      `Cannot set request status to "${newStatus}"! Request already "${currentStatus}"`
+  if (loggedInUser.role === "admin") {
+    // Admin can update any request status
+    const result = await RequestModel.findByIdAndUpdate(
+      id,
+      { requestStatus: newStatus },
+      { new: true }
     );
+    return result;
   }
 
-  const result = await RequestModel.findByIdAndUpdate(
-    id,
-    { requestStatus: newStatus },
-    { new: true }
-  );
-  return result;
+  if (loggedInUser.role === "owner") {
+    // Owner can only update requests related to their own listing
+    const listing = await ListingModel.findById(request.listing);
+    
+    // If the owner of the listing is not the same as the logged-in user, deny access
+    if (!listing || listing?.owner?.toString() !== loggedInUser._id.toString()) {
+      throw new AppError(httpStatus.FORBIDDEN, "You can only update requests for your own listings!");
+    }
+
+    // If the owner is the correct one, allow updating the status
+    const result = await RequestModel.findByIdAndUpdate(
+      id,
+      { requestStatus: newStatus },
+      { new: true }
+    );
+    return result;
+  }
 };
 
 const deleteRequestFromDB = async (id: string, payload: JwtPayload) => {
@@ -176,19 +217,19 @@ const deleteRequestFromDB = async (id: string, payload: JwtPayload) => {
     throw new AppError(httpStatus.NOT_FOUND, "Request has already been deleted!");
   }
 
-  if (request.tenant._id.toString() !== payload._id.toString()) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "You are not authorized delete this request"
+  if (request.tenant?.toString() === payload._id.toString() || payload.role === "admin") {
+    const result = await RequestModel.findByIdAndUpdate(
+      id,
+      { isDeleted: true },
+      { new: true }
     );
+    return result;
   }
 
-  const result = await RequestModel.findByIdAndUpdate(
-    id,
-    { isDeleted: true },
-    { new: true }
+  throw new AppError(
+    httpStatus.FORBIDDEN,
+    "You are not authorized delete this request"
   );
-  return result;
 };
 
 const verifyPayment = async (request_id: string) => {

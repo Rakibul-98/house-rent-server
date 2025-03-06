@@ -50,7 +50,7 @@ const getAllUsers = catchAsync(async (req, res) => {
 // fetching single user by email
 const getSingleUser = catchAsync(async (req, res) => {
   const { email } = req.params;
-  const result = await userServices.getSingleUserFromDB(email, req.user.email);
+  const result = await userServices.getSingleUserFromDB(email, req.user);
 
   if (!result) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found!");
@@ -66,10 +66,10 @@ const getSingleUser = catchAsync(async (req, res) => {
 
 const updateUser = catchAsync(async (req, res) => {
   const { userId } = req.params;
-  const { user_name, profile_image } = req.body;
+  const { user_name, profile_image, phone_num } = req.body;
 
   const result = await userServices.updateUserIntoDB(
-    userId, user_name, profile_image, req.user
+    userId, user_name, profile_image, phone_num, req.user
   );
 
   sendResponse(res, {

@@ -22,6 +22,7 @@ const userValidationSchema = z.object({
     profile_image: z.string().optional().default("https://ibb.co.com/mCdw2wR9"),
     role: z.enum(["tenant", "admin", "owner"]),
     isBlocked: z.boolean().optional().default(false),
+    isDeleted: z.boolean().optional().default(false),
   }),
 });
 

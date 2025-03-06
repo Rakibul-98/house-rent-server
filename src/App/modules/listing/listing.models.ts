@@ -30,7 +30,6 @@ const listingSchema = new Schema<ListingType>(
     owner: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Owner ID is mandatory!"],
     },
     isAvailable: {
       type: Boolean,

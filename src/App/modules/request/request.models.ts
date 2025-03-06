@@ -28,7 +28,7 @@ const requestSchema: Schema<requestType> = new Schema<requestType>(
     },
     requestStatus: {
       type: String,
-      enum: ["pending", "approved", "reject"],
+      enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
     transaction: {

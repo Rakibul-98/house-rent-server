@@ -31,7 +31,7 @@ const listingValidationSchema = z.object({
     rentalImages: z
       .array(z.string().url("Image must be a valid URL"))
       .nonempty("At least one image is required"),
-    owner: z.string().min(1, "Owner ID is required"),
+    owner: z.string().min(1, "Owner ID is required").optional(),
     isAvailable: z.boolean().optional().default(true),
     isDeleted: z.boolean().optional().default(false),
   }),

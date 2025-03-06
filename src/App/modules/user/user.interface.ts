@@ -8,7 +8,8 @@ export interface TUser {
   password: string;
   role: "tenant" | "admin" | "owner";
   profile_image: string;
-  isBlocked: boolean;
+  isBlocked?: boolean;
+  isDeleted?: boolean
 }
 
 // User interface for statics

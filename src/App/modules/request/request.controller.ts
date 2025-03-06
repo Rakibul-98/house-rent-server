@@ -6,37 +6,36 @@ import { ListingModel } from "../listing/listing.models";
 import { RequestServices } from "./request.service";
 
 const createRequest = catchAsync(async (req, res) => {
-  const tenant = req.user._id;
+  const tenant = req.user._id.toString();
   const { listing, totalAmount, phone } = req.body;
 
-    const listingDetails = await ListingModel.findById(listing);
+  const listingDetails = await ListingModel.findById(listing);
 
-    if (!listingDetails) {
-      return sendResponse(res, {
-        statusCode: httpStatus.NOT_FOUND,
-        success: false,
-        message: `Listing not found!`,
-        data: {},
-      });
-    }
+  if (!listingDetails) {
+    return sendResponse(res, {
+      statusCode: httpStatus.NOT_FOUND,
+      success: false,
+      message: `Listing not found!`,
+      data: {},
+    });
+  }
 
-    if (!listingDetails.isAvailable) {
-      return sendResponse(res, {
-        statusCode: httpStatus.BAD_REQUEST,
-        success: false,
-        message: `This has been already booked!`,
-        data: {},
-      });
-    }
+  if (!listingDetails.isAvailable) {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: `This has been already booked!`,
+      data: {},
+    });
+  }
 
-  // Create the requestorder
+  // Create the requestrequest
   const result = await RequestServices.createRequestIntoDB(
     {
-      ...
-      tenant,
       listing,
       totalAmount,
-      phone
+      phone,
+      tenant
     },
     req.user,
     req.ip!
@@ -62,7 +61,7 @@ const getAllRequests = catchAsync(async (req, res) => {
   });
 });
 
-// get single order
+// get single request
 const getSingleRequest = catchAsync(async (req, res) => {
   const { id } = req.params;
 
@@ -76,13 +75,14 @@ const getSingleRequest = catchAsync(async (req, res) => {
   });
 });
 
-// update order status
+// update request status
 
 const updateRequestStatus = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const { orderStatus } = req.body;
+  const { requestStatus } = req.body;
+  const loggedInUser = req.user;
 
-  const result = await RequestServices.updateRequestStatusIntoDB(id, orderStatus);
+  const result = await RequestServices.updateRequestStatusIntoDB(id, requestStatus, loggedInUser);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -101,18 +101,18 @@ const deleteRequest = catchAsync(async (req, res) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Request deleted successfully",
-    data: result,
+    data: {},
   });
 });
 
 const verifyPayment = catchAsync(async (req, res) => {
-  const order = await RequestServices.verifyPayment(req.query.order_id as string);
+  const request = await RequestServices.verifyPayment(req.query.request_id as string);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
     message: "Payment verified successfully",
-    data: order,
+    data: request,
   });
 });
 

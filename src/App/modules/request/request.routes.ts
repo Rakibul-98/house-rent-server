@@ -9,7 +9,7 @@ const router = express.Router();
 router.post(
   "/",
   auth("tenant"),
-  validateRequest(requestValidationSchema),
+  // validateRequest(requestValidationSchema),
   RequestController.createRequest
 );
 
@@ -21,6 +21,6 @@ router.get("/:id", auth("admin", "tenant", "owner"), RequestController.getSingle
 
 router.put("/:id", auth("admin" , "owner"), RequestController.updateRequestStatus);
 
-router.delete("/:id", auth("tenant", "owner"), RequestController.deleteRequest);
+router.delete("/:id", auth("tenant", "admin"), RequestController.deleteRequest);
 
 export const RequestRoutes = router;

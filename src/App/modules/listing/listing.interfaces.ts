@@ -6,7 +6,7 @@ export type ListingType = {
   rentAmount: number;
   numberOfBedrooms: number;
   rentalImages: string[];
-  owner: Types.ObjectId;
+  owner?: Types.ObjectId;
   isAvailable: boolean;
   isDeleted: boolean;
 };

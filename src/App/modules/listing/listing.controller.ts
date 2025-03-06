@@ -5,7 +5,8 @@ import { ListingServices } from "./listing.service";
 
 const createListing = catchAsync(async (req, res) => {
   const listingData = req.body;
-  const result = await ListingServices.createListingIntoDB(listingData);
+  const loggedInUser = req.user;
+  const result = await ListingServices.createListingIntoDB(listingData, loggedInUser);
 
   // send response
   sendResponse(res, {
@@ -75,7 +76,7 @@ const updateListing = catchAsync(async (req, res) => {
 
 const deleteListing = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const result = await ListingServices.deleteListingFromDB(id);
+  const result = await ListingServices.deleteListingFromDB(id, req.user);
 
   if (!result) {
     return sendResponse(res, {

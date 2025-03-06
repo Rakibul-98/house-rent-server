@@ -3,9 +3,15 @@ import AppError from "../../errors/AppError";
 import { ListingType } from "./listing.interfaces";
 import { ListingModel } from "./listing.models";
 import QueryBuilder from "./listing.queryBuilder";
+import { JwtPayload } from "jsonwebtoken";
 
-const createListingIntoDB = async (listing: ListingType) => {
-  const newListing = await ListingModel.create(listing);
+const createListingIntoDB = async (listing: ListingType, loggedInUser: JwtPayload) => {
+  const newListing = await ListingModel.create(
+    {
+      ...listing,
+      owner: loggedInUser._id.toString()
+    }
+  );
   return newListing;
 };
 
@@ -66,18 +72,27 @@ const updateListingIntoDB = async (_id: string, updateListing: Partial<ListingTy
   return updatedListing;
 };
 
-const deleteListingFromDB = async (_id: string) => {
-  const listing = await ListingModel.findOne({ _id, isDeleted: { $ne: true } });
+
+const deleteListingFromDB = async (_id: string, loggedInUser: JwtPayload) => {
+  // Fetch the listing based on the provided ID, excluding already deleted listings
+  const listing = await ListingModel.findOne({ _id, isDeleted: { $ne: true } }).populate('owner');
 
   if (!listing) {
     throw new AppError(httpStatus.NOT_FOUND, "Listing not found");
   }
 
+  // Check if the logged-in user is an admin or the owner of the listing
+  if (loggedInUser.role !== "admin" && !listing?.owner?._id.equals(loggedInUser._id)) {
+    throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to delete this listing");
+  }
+
+  // Update the listing to mark it as deleted
   const deletedListing = await ListingModel.updateOne(
     { _id, isDeleted: { $ne: true } },
     { isDeleted: true },
     { new: true }
   );
+
   return deletedListing;
 };
 

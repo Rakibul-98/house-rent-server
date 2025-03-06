@@ -14,7 +14,7 @@ const getAllUsersFromDB = async () => {
   return users;
 };
 
-const getSingleUserFromDB = async (email: string, userEmail: string) => {
+const getSingleUserFromDB = async (email: string, loggedInUser: JwtPayload) => {
   const user = await UserModel.findOne({ email });
 
   if (!user) {
@@ -22,7 +22,7 @@ const getSingleUserFromDB = async (email: string, userEmail: string) => {
   }
 
   // checking if the actual user try to get the data
-  if (email !== userEmail) {
+  if (loggedInUser.role !== "admin" && email !== loggedInUser.email) {
     throw new AppError(
       httpStatus.FORBIDDEN,
       "You are not authorized to view other user’s details"
@@ -45,6 +45,7 @@ const updateUserIntoDB = async (
   _id: string,
   user_name: string,
   profile_image: string,
+  phone_num: string,
   payload: JwtPayload
 ) => {
   const user = await UserModel.findById({_id});
@@ -66,6 +67,7 @@ const updateUserIntoDB = async (
     {
       user_name,
       profile_image,
+      phone_num,
       updatedAt: new Date(),
     },
     {

@@ -5,13 +5,13 @@ export type requestType = {
   listing: Types.ObjectId;
   totalAmount: number;
   phone: string;
-  paymentStatus:"pending"
+  paymentStatus?:"pending"
   | "paid"
   | "cancelled";
-  requestStatus:
+  requestStatus?:
     "pending"
     | "approved"
-    | "reject";
+    | "rejected";
   transaction?: {
     id: string;
     transactionStatus: string;
@@ -21,5 +21,5 @@ export type requestType = {
     method: string;
     date_time: string;
   };
-  isDeleted: boolean;
+  isDeleted?: boolean;
 };

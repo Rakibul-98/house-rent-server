@@ -16,7 +16,6 @@ export const requestValidationSchema = z.object({
   body: z.object({
     tenant: z
       .string()
-      .regex(/^[0-9a-fA-F]{24}$/, "Invalid tenant ID")
       .min(1, "Tenant ID is required"),
     listing: z
       .string()
@@ -32,7 +31,7 @@ export const requestValidationSchema = z.object({
       .default("pending")
       .optional(),
     requestStatus: z
-      .enum(["pending", "approved", "reject"])
+      .enum(["pending", "approved", "rejected"])
       .default("pending")
       .optional(),
     transaction: transactionSchema.optional(),
