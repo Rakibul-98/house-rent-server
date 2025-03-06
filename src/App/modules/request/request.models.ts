@@ -13,6 +13,9 @@ const requestSchema: Schema<requestType> = new Schema<requestType>(
       ref: "Listing",
       required: true,
     },
+    message: {
+      type: String,
+    },
     totalAmount: {
       type: Number,
       required: true,
@@ -23,8 +26,8 @@ const requestSchema: Schema<requestType> = new Schema<requestType>(
     },
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "cancelled"],
-      default: "pending",
+      enum: ["inactive", "paid", "active"],
+      default: "inactive",
     },
     requestStatus: {
       type: String,

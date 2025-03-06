@@ -5,9 +5,10 @@ export type requestType = {
   listing: Types.ObjectId;
   totalAmount: number;
   phone: string;
-  paymentStatus?:"pending"
+  message?: string;
+  paymentStatus?:"inactive"
   | "paid"
-  | "cancelled";
+  | "active";
   requestStatus?:
     "pending"
     | "approved"

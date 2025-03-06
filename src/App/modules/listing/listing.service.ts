@@ -2,7 +2,7 @@ import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
 import { ListingType } from "./listing.interfaces";
 import { ListingModel } from "./listing.models";
-import QueryBuilder from "./listing.queryBuilder";
+import QueryBuilder from "../../utils/queryBuilder";
 import { JwtPayload } from "jsonwebtoken";
 
 const createListingIntoDB = async (listing: ListingType, loggedInUser: JwtPayload) => {
@@ -24,7 +24,7 @@ const getAllListingsFromDB = async (query: Record<string, unknown>) => {
     }),
     query
   )
-    .search(["name", "brand", "category", "house_description", "features"])
+    .search(["rentalHouseLocation", "house_description"])
     .filter()
     .sort()
     .limit()
@@ -36,7 +36,7 @@ const getAllListingsFromDB = async (query: Record<string, unknown>) => {
   // Counting the total number of documents matching the query
   const totalData = await ListingModel.countDocuments(
     new QueryBuilder(ListingModel.find({ isDeleted: { $ne: true } }), query)
-      .search(["name", "brand", "category", "house_description", "features"])
+      .search(["rentalHouseLocation", "house_description"])
       .filter()
       .modelQuery.getFilter()
   );

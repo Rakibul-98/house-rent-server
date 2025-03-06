@@ -13,6 +13,12 @@ router.post(
   RequestController.createRequest
 );
 
+router.post(
+  "/payment/:id",
+  auth("tenant"),
+  RequestController.initiatePayment
+);
+
 router.get("/verify", auth("tenant"), RequestController.verifyPayment);
 
 router.get("/", auth("admin", "tenant", "owner"), RequestController.getAllRequests);
@@ -22,5 +28,7 @@ router.get("/:id", auth("admin", "tenant", "owner"), RequestController.getSingle
 router.put("/:id", auth("admin" , "owner"), RequestController.updateRequestStatus);
 
 router.delete("/:id", auth("tenant", "admin"), RequestController.deleteRequest);
+
+
 
 export const RequestRoutes = router;

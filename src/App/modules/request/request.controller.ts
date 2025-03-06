@@ -7,7 +7,7 @@ import { RequestServices } from "./request.service";
 
 const createRequest = catchAsync(async (req, res) => {
   const tenant = req.user._id.toString();
-  const { listing, totalAmount, phone } = req.body;
+  const { listing, totalAmount, phone, message } = req.body;
 
   const listingDetails = await ListingModel.findById(listing);
 
@@ -35,10 +35,10 @@ const createRequest = catchAsync(async (req, res) => {
       listing,
       totalAmount,
       phone,
-      tenant
+      tenant,
+      message
     },
-    req.user,
-    req.ip!
+    req.user
   );
 
   sendResponse(res, {
@@ -48,6 +48,19 @@ const createRequest = catchAsync(async (req, res) => {
     data: result,
   });
 });
+
+const initiatePayment = catchAsync(async (req, res) =>{
+  const { id } = req.params;
+
+  const result = await RequestServices.initiatePaymentService(id, req.ip!, req.user);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Payment initialted successfully",
+    data: result,
+  });
+})
 
 const getAllRequests = catchAsync(async (req, res) => {
   // get query params
@@ -95,7 +108,7 @@ const updateRequestStatus = catchAsync(async (req, res) => {
 const deleteRequest = catchAsync(async (req, res) => {
   const { id } = req.params;
 
-  const result = await RequestServices.deleteRequestFromDB(id, req.user);
+  await RequestServices.deleteRequestFromDB(id, req.user);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -123,4 +136,5 @@ export const RequestController = {
   updateRequestStatus,
   deleteRequest,
   verifyPayment,
+  initiatePayment,
 };

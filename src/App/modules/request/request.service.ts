@@ -1,7 +1,7 @@
 import httpStatus from "http-status";
 import { JwtPayload } from "jsonwebtoken";
 import { ListingModel } from "../listing/listing.models";
-import QueryBuilder from "../listing/listing.queryBuilder";
+import QueryBuilder from "../../utils/queryBuilder";
 import { RequestModel } from "./request.models";
 import AppError from "../../errors/AppError";
 import { requestUtils } from "./request.utils";
@@ -10,8 +10,7 @@ import { requestType } from "./request.interfaces";
 
 const createRequestIntoDB = async (
   requestData: requestType,
-  loggedInUser: JwtPayload,
-  client_ip: string
+  loggedInUser: JwtPayload
 ) => {
   const userStatus = loggedInUser.isBlocked;
 
@@ -24,13 +23,13 @@ const createRequestIntoDB = async (
   }
 
   // Update stock for each product in the request
-    const listingData = await ListingModel.findById(requestData.listing);
-    if (!listingData) {
-      throw new AppError(
-        httpStatus.NOT_FOUND,
-        `Listing with ID ${requestData.listing} not found!`
-      );
-    }
+  const listingData = await ListingModel.findById(requestData.listing);
+  if (!listingData) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      `Listing with ID ${requestData.listing} not found!`
+    );
+  }
 
   // Create the request
   let request = await RequestModel.create(
@@ -39,6 +38,7 @@ const createRequestIntoDB = async (
       totalAmount: requestData.totalAmount,
       phone: requestData.phone,
       tenant: requestData.tenant,
+      message: requestData.message,
     });
 
   // Populate tenant and product details
@@ -57,20 +57,47 @@ const createRequestIntoDB = async (
     },
   ]);
 
+  return request;
+};
+
+const initiatePaymentService = async (id: string, client_ip: string, loggedInUser: JwtPayload) => {
+
+  let request = await RequestModel.findById(id);
+
+  if (!request || request.isDeleted) {
+    throw new AppError(httpStatus.NOT_FOUND, "Request not found!");
+  }
+
+  if (request.tenant.toString() !== loggedInUser._id.toString()) {
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "You can only pay for your own requests!"
+    );
+  }
+
+  if (request.requestStatus !== "approved") {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Payment is only available after request approval."
+    );
+  }
+
   // payment integration
   const shurjopayPayload = {
-    amount: requestData.totalAmount,
-    request_id: request._id,
+    amount: request.totalAmount,
+    order_id: request._id,
     currency: "BDT",
-    tenant_name: loggedInUser.user_name,
-    tenant_email: loggedInUser.email,
-    tenant_phone: requestData.phone,
-    tenant_address: "N/A",
-    tenant_city: "N/A",
+    customer_name: loggedInUser.user_name,
+    customer_email: loggedInUser.email,
+    customer_phone: request.phone,
+    customer_address: "N/A",
+    customer_city: "N/A",
     client_ip,
   };
 
+
   const payment = await requestUtils.makePaymentAsync(shurjopayPayload);
+
 
   if (payment?.transactionStatus) {
     request = await request.updateOne({
@@ -82,7 +109,9 @@ const createRequestIntoDB = async (
   }
 
   return payment.checkout_url;
-};
+
+}
+
 
 const getAllRequestsFromDB = async (
   query: Record<string, unknown>,
@@ -116,23 +145,36 @@ const getAllRequestsFromDB = async (
         const listingIds = ownerListings.map((listing) => listing._id);
         requestQuery = requestQuery.where("listing").in(listingIds);
       } else {
-        return []; // If the owner has no listings, return an empty array
+        return { totalData: 0, result: [] }; // If no listings, return empty data
       }
     }
   }
 
-  // Apply filters, sorting, and search functionality
+  // Apply filters, sorting, pagination, and search functionality
   const finalQuery = new QueryBuilder(requestQuery, query)
-    .search(["name", "user_name", "email"])
+    .search(["name", "user_name", "email"]) // Define searchable fields
+    .filter()
     .sort()
-    .filter();
+    .limit()
+    .paginate();
 
+  // Fetching the filtered results
   const result = await finalQuery.modelQuery;
-  return result;
+
+  // Counting total matching records
+  const totalData = await RequestModel.countDocuments(
+    new QueryBuilder(RequestModel.find({ isDeleted: { $ne: true } }), query)
+      .search(["name", "user_name", "email"])
+      .filter()
+      .modelQuery.getFilter()
+  );
+
+  return { totalData, result };
 };
 
+
 const getSingleRequestFromDB = async (id: string, loggedInUser: JwtPayload) => {
-  
+
   const request = await RequestModel.findById(id).populate([
     {
       path: "tenant",
@@ -177,11 +219,16 @@ const updateRequestStatusIntoDB = async (id: string, newStatus: string, loggedIn
     throw new AppError(httpStatus.NOT_FOUND, "Request not found!");
   }
 
+  const updatedPaymentStatus = newStatus === "approved" ? "active" : "inactive";
+
   if (loggedInUser.role === "admin") {
     // Admin can update any request status
     const result = await RequestModel.findByIdAndUpdate(
       id,
-      { requestStatus: newStatus },
+      {
+        requestStatus: newStatus,
+        paymentStatus: updatedPaymentStatus
+      },
       { new: true }
     );
     return result;
@@ -190,7 +237,7 @@ const updateRequestStatusIntoDB = async (id: string, newStatus: string, loggedIn
   if (loggedInUser.role === "owner") {
     // Owner can only update requests related to their own listing
     const listing = await ListingModel.findById(request.listing);
-    
+
     // If the owner of the listing is not the same as the logged-in user, deny access
     if (!listing || listing?.owner?.toString() !== loggedInUser._id.toString()) {
       throw new AppError(httpStatus.FORBIDDEN, "You can only update requests for your own listings!");
@@ -199,7 +246,10 @@ const updateRequestStatusIntoDB = async (id: string, newStatus: string, loggedIn
     // If the owner is the correct one, allow updating the status
     const result = await RequestModel.findByIdAndUpdate(
       id,
-      { requestStatus: newStatus },
+      {
+        requestStatus: newStatus,
+        paymentStatus: updatedPaymentStatus
+      },
       { new: true }
     );
     return result;
@@ -236,7 +286,7 @@ const verifyPayment = async (request_id: string) => {
   const verifiedPayment = await requestUtils.verifyPaymentAsync(request_id);
 
   if (verifiedPayment.length) {
-    await RequestModel.findOneAndUpdate(
+    const updatedRequest = await RequestModel.findOneAndUpdate(
       {
         "transaction.id": request_id,
       },
@@ -251,15 +301,33 @@ const verifyPayment = async (request_id: string) => {
           verifiedPayment[0].bank_status === "Success"
             ? "Paid"
             : verifiedPayment[0].bank_status === "Failed"
-            ? "Pending"
-            : verifiedPayment[0].bank_status === "Cancel"
-            ? "Cancelled"
-            : "",
+              ? "Pending"
+              : verifiedPayment[0].bank_status === "Cancel"
+                ? "Cancelled"
+                : "",
+        paymentStatus:
+          verifiedPayment[0].bank_status === "Success"
+            ? "Paid"
+            : verifiedPayment[0].bank_status === "Failed"
+              ? "Pending"
+              : verifiedPayment[0].bank_status === "Cancel"
+                ? "Cancelled"
+                : "",
       },
       { new: true }
     );
-  }
+    if (verifiedPayment[0].bank_status === "Success" && updatedRequest) {
+      const listing = await ListingModel.findById(updatedRequest.listing);
 
+      if (listing) {
+        listing.isAvailable = false;
+        await listing.save();
+        console.log("Updated Listing Availability:", listing);
+      } else {
+        console.error("Listing not found for request:", updatedRequest.listing);
+      }
+    }
+  }
   return verifiedPayment;
 };
 
@@ -270,4 +338,5 @@ export const RequestServices = {
   deleteRequestFromDB,
   updateRequestStatusIntoDB,
   verifyPayment,
+  initiatePaymentService
 };
