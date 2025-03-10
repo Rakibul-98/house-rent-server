@@ -6,6 +6,7 @@ import QueryBuilder from "../../utils/queryBuilder";
 import { JwtPayload } from "jsonwebtoken";
 
 const createListingIntoDB = async (listing: ListingType, loggedInUser: JwtPayload) => {
+
   const newListing = await ListingModel.create(
     {
       ...listing,

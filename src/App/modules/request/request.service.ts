@@ -305,21 +305,13 @@ const verifyPayment = async (request_id: string) => {
         "transaction.transactionStatus": verifiedPayment[0].transaction_status,
         "transaction.method": verifiedPayment[0].method,
         "transaction.date_time": verifiedPayment[0].date_time,
-        requestStatus:
-          verifiedPayment[0].bank_status === "Success"
-            ? "Paid"
-            : verifiedPayment[0].bank_status === "Failed"
-              ? "Pending"
-              : verifiedPayment[0].bank_status === "Cancel"
-                ? "Cancelled"
-                : "",
         paymentStatus:
           verifiedPayment[0].bank_status === "Success"
-            ? "Paid"
+            ? "paid"
             : verifiedPayment[0].bank_status === "Failed"
-              ? "Pending"
+              ? "active"
               : verifiedPayment[0].bank_status === "Cancel"
-                ? "Cancelled"
+                ? "active"
                 : "",
       },
       { new: true }

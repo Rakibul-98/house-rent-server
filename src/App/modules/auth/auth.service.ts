@@ -31,8 +31,13 @@ const loginUser = async (payload: TLoginUser) => {
   }
 
   const jwtPayload = {
-    user: existingUser.email,
+    email: existingUser.email,
     role: existingUser.role,
+    user_name: existingUser.user_name,
+    phone_num: existingUser.phone_num,
+    profile_image: existingUser.profile_image,
+    isBlocked: existingUser.isBlocked,
+    isDeleted: existingUser.isDeleted
   };
 
   // generate access token with JWT

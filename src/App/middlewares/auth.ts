@@ -27,7 +27,7 @@ const auth = (...requiredRoles: string[]) => {
     }
 
     // get logged in user
-    const loggedInUser = await UserModel.findOne({ email: decoded.user });
+    const loggedInUser = await UserModel.findOne({ email: decoded.email });
     if (!loggedInUser) {
       throw new AppError(httpStatus.UNAUTHORIZED, "User not found!");
     }

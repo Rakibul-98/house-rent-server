@@ -8,7 +8,7 @@ const loginValidationSchema = z.object({
         ).email(),
         password: z.string(
             { required_error: "Password is required" }
-        ).min(4)
+        ).min(8)
     })
 })
 

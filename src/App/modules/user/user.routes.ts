@@ -16,6 +16,6 @@ router.get("/", auth("admin"), userControllers.getAllUsers);
 
 router.get("/:email", auth("admin", "tenant", "owner"), userControllers.getSingleUser);
 
-router.patch("/:userId", auth("admin", "tenant", "owner"), userControllers.updateUser);
+router.patch("/", auth("admin", "tenant", "owner"), userControllers.updateUser);
 
 export const userRoutes = router;

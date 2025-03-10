@@ -28,9 +28,10 @@ const listingValidationSchema = z.object({
       .int("Number of bedrooms must be an integer")
       .min(1, "Number of bedrooms must be at least 1")
       .max(10, "Number of bedrooms cannot exceed 10"),
-    rentalImages: z
-      .array(z.string().url("Image must be a valid URL"))
-      .nonempty("At least one image is required"),
+    features: z
+      .array(z.string())
+      .nonempty("At least one feature is required"),
+      rentalImages: z.array(z.string()).optional(),
     owner: z.string().min(1, "Owner ID is required").optional(),
     isAvailable: z.boolean().optional().default(true),
     isDeleted: z.boolean().optional().default(false),

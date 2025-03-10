@@ -23,6 +23,10 @@ const listingSchema = new Schema<ListingType>(
       required: [true, "Number of bedrooms is mandatory!"],
       min: [1, "Number of bedrooms must be at least 1"],
     },
+    features: {
+      type: [String],
+      required: [true, "Features are mandatory!"],
+    },
     rentalImages: {
       type: [String],
       required: [true, "Rental images are mandatory!"],

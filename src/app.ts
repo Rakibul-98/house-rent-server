@@ -11,8 +11,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "https://bike-solution-rakibul.vercel.app",
-    // origin: "http://localhost:5173",
+    // origin: "https://bike-solution-rakibul.vercel.app",
+    origin: "http://localhost:3000",
     credentials: true,
   })
 );

@@ -3,17 +3,28 @@ import catchAsync from "../../utils/catchAsync";
 import sendResponse from "../../utils/sendResponse";
 import httpStatus from "http-status";
 import AppError from "../../errors/AppError";
+import config from "../../config";
 
 // user creation
 const createUser = catchAsync(async (req, res) => {
   const userData = req.body;
   const result = await userServices.createUserIntoDB(userData);
 
+  const { refreshToken, token } = result;
+  
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: config.node_env === "production",
+    });
+  
+
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
     message: "User registered successfully",
-    data: result,
+    data: {
+      token,
+    },
   });
 });
 
@@ -65,11 +76,10 @@ const getSingleUser = catchAsync(async (req, res) => {
 });
 
 const updateUser = catchAsync(async (req, res) => {
-  const { userId } = req.params;
   const { user_name, profile_image, phone_num } = req.body;
 
   const result = await userServices.updateUserIntoDB(
-    userId, user_name, profile_image, phone_num, req.user
+    user_name, profile_image, phone_num, req.user
   );
 
   sendResponse(res, {
