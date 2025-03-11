@@ -11,8 +11,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    // origin: "https://bike-solution-rakibul.vercel.app",
-    origin: "http://localhost:3000",
+    origin: "https://house-rent-client.onrender.com",
+    // origin: "http://localhost:3000",
     credentials: true,
   })
 );
