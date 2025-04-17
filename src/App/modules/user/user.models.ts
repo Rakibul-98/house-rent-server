@@ -27,7 +27,7 @@ const userSchema = new Schema<TUser, User>(
     },
     profile_image: {
       type: String,
-      default: "https://ibb.co.com/mCdw2wR9",
+      default: "https://i.ibb.co.com/jkpLFGBq/dummy-user.png",
     },
     role: {
       type: String,
