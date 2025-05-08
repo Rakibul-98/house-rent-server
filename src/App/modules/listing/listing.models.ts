@@ -3,6 +3,24 @@ import { ListingType } from "./listing.interfaces";
 
 const listingSchema = new Schema<ListingType>(
   {
+    propertyTitle: {
+      type: String,
+      required: [true, "Property title is required!"],
+      trim: true,
+    },
+    areaSize: {
+      type: Number,
+      required: [true, "Area size is required!"],
+      min: [1, "Area size must be a positive number"],
+    },
+    houseType: {
+      type: String,
+      required: [true, "House type is required!"],
+      enum: {
+        values: ["Apartment", "Duplex", "Single Family", "Shared Room", "Penthouse"],
+        message: "House type must be one of: Apartment, Duplex, Single Family, Shared Room, Penthouse",
+      },
+    },
     rentalHouseLocation: {
       type: String,
       required: [true, "Rental house location is mandatory!"],

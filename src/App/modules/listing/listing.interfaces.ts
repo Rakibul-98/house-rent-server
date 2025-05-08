@@ -1,7 +1,9 @@
 import { Types } from "mongoose";
 
 export type ListingType = {
-  houseType:string;
+  propertyTitle: string;
+  areaSize: number;
+  houseType:"Apartment" | "Duplex" | "Single Family" | "Shared Room" | "Penthouse";
   rentalHouseLocation: string;
   house_description: string;
   rentAmount: number;

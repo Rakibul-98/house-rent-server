@@ -1,8 +1,27 @@
 import { z } from "zod";
 
-// Rental house listing data validation
 const listingValidationSchema = z.object({
   body: z.object({
+    propertyTitle: z
+      .string()
+      .min(1, "Property title is required!")
+      .trim(),
+
+    areaSize: z
+      .number({
+        required_error: "Area size is required!",
+        invalid_type_error: "Area size must be a number",
+      })
+      .min(1, "Area size must be a positive number"),
+
+    houseType: z.enum(
+      ["Apartment", "Duplex", "Single Family", "Shared Room", "Penthouse"],
+      {
+        required_error: "House type is required!",
+        invalid_type_error:
+          "House type must be one of: Apartment, Duplex, Single Family, Shared Room, Penthouse",
+      }
+    ),
     rentalHouseLocation: z
       .string()
       .min(1, "Rental house location is required")
@@ -31,7 +50,7 @@ const listingValidationSchema = z.object({
     features: z
       .array(z.string())
       .nonempty("At least one feature is required"),
-      rentalImages: z.array(z.string()).optional(),
+    rentalImages: z.array(z.string()).optional(),
     owner: z.string().min(1, "Owner ID is required").optional(),
     isAvailable: z.boolean().optional().default(true),
     isDeleted: z.boolean().optional().default(false),
