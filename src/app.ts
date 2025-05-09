@@ -11,7 +11,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    // origin: "https://house-rent-client.onrender.com",
     origin: "https://house-finder-rakibul.vercel.app",
     // origin: "http://localhost:3000",
     credentials: true,
